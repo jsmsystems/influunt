@@ -11,10 +11,12 @@ angular.module('influuntApp')
   .factory('pahoProvider', ['MQTT_ROOT', '$q', '$timeout', '$rootScope', function pahoProvider(MQTT_ROOT, $q, $timeout, $rootScope) {
 
     $rootScope.pahoConnected = true;
-    var clearConnections, connectClient;
+    var clearConnections, connectClient, PahoClient, PahoMessage;
     var isConnected = false;
     var clientId = 'influunt-app-' + UUID.generate();
-    var client = new Paho.MQTT.Client(
+    PahoClient = _.get(window, 'Paho.MQTT.Client') || _.get(window, 'Paho.Client');
+    PahoMessage = _.get(window, 'Paho.MQTT.Message') || _.get(window, 'Paho.Message');
+    var client = new PahoClient(
       MQTT_ROOT.url, MQTT_ROOT.port, clientId
     );
     var subscribers = {};
@@ -124,7 +126,7 @@ angular.module('influuntApp')
         throw new Error('Client is not connected.');
       }
 
-      var message = new Paho.MQTT.Message(JSON.stringify(body));
+      var message = new PahoMessage(JSON.stringify(body));
       message.destinationName = topic;
       return client.send(message);
     };

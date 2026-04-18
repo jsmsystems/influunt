@@ -18,6 +18,7 @@ angular.module('influuntApp')
                       filtroIntervaloFalhas) {
       // Herda todo o comportamento de breadcrumbs.
       $controller('BreadcrumbsCtrl', {$scope: $scope});
+      $scope.$state = $state;
       Idle.watch();
 
       var checkRoleForMenus, atualizaDadosDinamicos, registerWatchers, getControlador, logout, loadAlarmesEFalhas,
@@ -111,7 +112,7 @@ angular.module('influuntApp')
           }
 
           _.map(menu.children, function(subMenu) {
-            var roleName = _.get($scope.$state.get(subMenu.route), 'data.permissions.only');
+            var roleName = _.get($state.get(subMenu.route), 'data.permissions.only');
             PermissionsService.checkRole(roleName).then(function() { $scope.menuVisible[menu.name] = true; });
           });
         });

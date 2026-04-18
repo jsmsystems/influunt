@@ -1,13 +1,150 @@
-#Influnnt
+# Influunt
 
 ![Diagrama de Componentes](/influunt-doc/diagramas/componentes.png?raw=true "Componentes do Sistema")
 
+Central semafórica de código aberto. Este repositório contém um backend legado em Java/Play Framework, uma interface web antiga em AngularJS e componentes auxiliares.
+
+## Comece por aqui
+
+Se o seu objetivo é apenas baixar o projeto e rodar localmente para conhecer o sistema, use o ambiente Docker já preparado neste repositório.
+
+Você não precisa instalar manualmente:
+
+- Java
+- Node.js
+- MongoDB
+- MySQL
+- Mosquitto
+- Nginx
+
+Tudo isso sobe em containers pelo Docker Desktop.
+
+## Rodando com Docker Desktop
+
+### Pré-requisitos
+
+- Docker Desktop instalado e iniciado
+- portas `8080`, `9000`, `1883` e `1884` livres
+- repositório clonado por completo
+
+### Passo a passo
+
+1. Abra um terminal na raiz do projeto.
+2. Execute:
+
+```bash
+docker compose up -d --build
+```
+
+3. Aguarde a primeira inicialização.
+
+A compilação do projeto acontece dentro dos containers. Em outras palavras:
+
+- o backend Java é preparado no container `api`
+- as dependências do frontend são instaladas no container `web-setup`
+- você não precisa rodar comandos de Java, Node ou banco manualmente no host
+
+Observações sobre a primeira subida:
+
+- ela pode demorar alguns minutos
+- o Docker vai baixar imagens antigas e dependências legadas
+- o backend pode levar um pouco mais para ficar pronto do que o frontend
+
+4. Quando terminar, abra no navegador:
+
+```text
+http://localhost:8080
+```
+
+5. Faça login com:
+
+- usuário: `root`
+- senha: `1234`
+
+### Comandos úteis
+
+Subir o ambiente:
+
+```bash
+docker compose up -d --build
+```
+
+Ver logs:
+
+```bash
+docker compose logs -f api web
+```
+
+Parar tudo:
+
+```bash
+docker compose down
+```
+
+Apagar os dados locais e recriar tudo do zero:
+
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+### O que vai subir no Docker
+
+O ambiente local preparado neste repositório sobe:
+
+- `mysql:5.7`
+- `mongo:3.4`
+- `eclipse-mosquitto:2`
+- `nginx:1.27-alpine`
+- `mailhog/mailhog:v1.0.1`
+- um container `api` com Java 8 e Activator
+- um container `web-setup` para instalar dependências antigas do frontend
+
+### Solução de problemas
+
+Se a tela abrir em branco ou parecer travada:
+
+1. faça `Ctrl+Shift+R` no navegador
+2. teste em aba anônima
+3. confira se os containers estão de pé:
+
+```bash
+docker compose ps
+```
+
+4. veja os logs:
+
+```bash
+docker compose logs -f api web
+```
+
+Se quiser validar rapidamente pelo terminal se a API está respondendo:
+
+```bash
+curl -I http://127.0.0.1:9000/api/api/v1/permissoes/roles
+```
+
+### Onde está a documentação técnica do ambiente Docker
+
+Os detalhes técnicos do cenário preparado para outra máquina estão em:
+
+- [AGENTS.md](AGENTS.md)
+
+Esse arquivo descreve:
+
+- arquivos que precisam estar no commit
+- correções já descobertas para o stack legado
+- troubleshooting do ambiente local
 
 ## Referências
 
 * [Manual do Usuário](/influunt-doc/manual_usuario.pdf)
 * [Especificação do Protocolo de Comunicação](http://influunt.github.io)
 * [Especificação da CET](influunt-doc/especificacao_cet.pdf)
+
+## Documentação legada
+
+As seções abaixo são a documentação original do projeto para instalação manual do ambiente nativo, sem Docker. Elas podem servir como referência histórica, mas para uso local simples a recomendação atual é usar o fluxo em Docker descrito acima.
 
 ## Dependências da Central
 Para instar a central é necessário instalar as seguintes dependências:
