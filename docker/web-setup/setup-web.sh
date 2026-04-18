@@ -2,6 +2,9 @@
 
 set -euo pipefail
 
+mkdir -p /workspace/influunt-app
+cp -a /opt/influunt-app-src/. /workspace/influunt-app/
+
 cd /workspace/influunt-app
 
 if [[ ! -x node_modules/.bin/gulp ]]; then

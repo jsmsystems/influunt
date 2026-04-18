@@ -13,7 +13,7 @@ RUN sed -i 's|deb.debian.org/debian|archive.debian.org/debian|g' /etc/apt/source
     npm install -g bower gulp-cli && \
     rm -rf /var/lib/apt/lists/*
 
-COPY influunt-app /workspace/influunt-app
+COPY influunt-app /opt/influunt-app-src
 COPY docker/web-setup/setup-web.sh /workspace/docker/web-setup/setup-web.sh
 
 RUN sed -i 's/\r$//' /workspace/docker/web-setup/setup-web.sh && \

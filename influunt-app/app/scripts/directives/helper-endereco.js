@@ -17,6 +17,64 @@ angular.module('influuntApp')
         },
         link: function (scope, element) {
           var URL = PLACES_API.baseUrl + '/endereco';
+          var inputEventNamespace = '.helper-endereco';
+          var shouldPersistTypedValue = false;
+          var currentTypedValue = '';
+
+          var bindSearchField = function() {
+            var select2 = $(element).data('select2');
+            var $searchField = _.get(select2, 'dropdown.$search');
+
+            if (!$searchField || $searchField.length === 0) {
+              return;
+            }
+
+            $searchField.off(inputEventNamespace)
+              .on('input' + inputEventNamespace, function() {
+                currentTypedValue = $.trim($(this).val());
+              })
+              .on('keydown' + inputEventNamespace, function(ev) {
+                if (ev.which === 13 && currentTypedValue) {
+                  ev.preventDefault();
+                  ev.stopPropagation();
+                  shouldPersistTypedValue = true;
+                  persistTypedValue(currentTypedValue);
+                  $(element).select2('close');
+                }
+              });
+          };
+
+          var unbindSearchField = function() {
+            var select2 = $(element).data('select2');
+            var $searchField = _.get(select2, 'dropdown.$search');
+
+            if ($searchField && $searchField.length > 0) {
+              $searchField.off(inputEventNamespace);
+            }
+          };
+
+          var ensureOption = function(value) {
+            if (!value) { return; }
+
+            var escapedValue = value.replace(/"/g, '\\"');
+            var selector = 'option[value="' + escapedValue + '"]';
+            var $option = $(element).find(selector);
+
+            if ($option.length === 0) {
+              $option = $('<option></option>').val(value).text(value);
+              $(element).append($option);
+            }
+
+            return $option;
+          };
+
+          var persistTypedValue = function(value) {
+            if (!value) { return; }
+
+            ensureOption(value);
+            $(element).val(value).trigger('change');
+          };
+
           var getSelect2Object = function(obj) {
             var endereco = obj.logradouro1;
             var texto = [endereco.tipo, endereco.titulo, endereco.nome, ',', endereco.altNum, ',', endereco.distrito]
@@ -36,6 +94,7 @@ angular.module('influuntApp')
                 url: function(params) { return [URL, '/', params.term].join(''); },
                 dataType: 'json',
                 delay: 250,
+                timeout: 3000,
                 data: {},
                 processResults: function (data) {
                   var result = _.get(data, 'ArrayOfEndereco.Endereco');
@@ -44,18 +103,51 @@ angular.module('influuntApp')
                   } else if (_.isObject(result)) {
                     return { results: [getSelect2Object(result)] };
                   } else {
-                    return [];
+                    return { results: [] };
                   }
                 },
                 cache: true
               },
-              minimumInputLength: 3
+              minimumInputLength: 3,
+              tags: true,
+              createTag: function(params) {
+                var term = $.trim(params.term);
+
+                if (term === '') {
+                  return null;
+                }
+
+                return {
+                  id: term,
+                  text: term,
+                  newTag: true
+                };
+              }
             }
           )
+          .on('select2:open', function() {
+            shouldPersistTypedValue = true;
+            currentTypedValue = '';
+            bindSearchField();
+          })
+          .on('select2:select', function() {
+            shouldPersistTypedValue = false;
+            currentTypedValue = '';
+          })
           .on('change', function(ev) {
             $timeout(function() {
               scope.localizacao = ev.target.value;
             });
+          })
+          .on('select2:closing', function() {
+            unbindSearchField();
+            if (shouldPersistTypedValue && currentTypedValue) {
+              $timeout(function() {
+                persistTypedValue(currentTypedValue);
+              });
+            }
+            shouldPersistTypedValue = false;
+            currentTypedValue = '';
           })
           ;
 
@@ -64,8 +156,8 @@ angular.module('influuntApp')
             $timeout(function() {
               if (!!scope.anelId && cacheAnel !== scope.anelId || !!val && typeof prevVal === 'undefined') {
                 cacheAnel = scope.anelId;
-                var $option = $('<option></option>').val(val).text(val);
-                $(element).append($option).val(val).trigger('change');
+                ensureOption(val);
+                $(element).val(val).trigger('change');
               }
             }, 1000);
           });

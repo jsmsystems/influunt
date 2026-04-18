@@ -68,6 +68,13 @@ Ver logs principais:
 docker compose logs -f api web
 ```
 
+Aplica correções:
+
+```bash
+docker compose rm -sf web web-setup
+docker compose up -d --build web-setup web
+```
+
 Parar o ambiente:
 
 ```bash
