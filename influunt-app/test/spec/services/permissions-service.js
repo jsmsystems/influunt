@@ -4,6 +4,7 @@ describe('Service: PermissionsService', function () {
 
   var PermissionsService,
       $httpBackend,
+      $rootScope,
       PermPermissionStore,
       PermRoleStore,
       permissoesResponse = {
@@ -20,9 +21,10 @@ describe('Service: PermissionsService', function () {
         ]
       };
 
-  beforeEach(inject(function (_PermissionsService_, _$httpBackend_, _PermPermissionStore_, _PermRoleStore_) {
+  beforeEach(inject(function (_PermissionsService_, _$httpBackend_, _$rootScope_, _PermPermissionStore_, _PermRoleStore_) {
     PermissionsService = _PermissionsService_;
     $httpBackend = _$httpBackend_;
+    $rootScope = _$rootScope_;
     PermPermissionStore = _PermPermissionStore_;
     PermRoleStore = _PermRoleStore_;
   }));
@@ -126,6 +128,62 @@ describe('Service: PermissionsService', function () {
       PermissionsService.loadPermissions().then(function() {
         expect(PermissionsService.podeVisualizarTodasAreas()).toBe(false);
       });
+    });
+  });
+
+  describe('checkRole()', function () {
+    it('permite qualquer role para usuÃ¡rio root mesmo sem permissÃµes app carregadas', function(done) {
+      localStorage.setItem('usuario', JSON.stringify({
+        id: 'root',
+        login: 'root',
+        email: 'root@example.com',
+        root: true,
+        permissoes: []
+      }));
+
+      PermissionsService.checkRole('listarCidades')
+        .then(function() {
+          done();
+        })
+        .catch(function() {
+          fail('usuÃ¡rio root nÃ£o deveria ser bloqueado por role ausente');
+          done();
+        });
+
+      $rootScope.$digest();
+    });
+  });
+
+  describe('loadPermissions() com seed local incompleto', function () {
+    it('mantÃ©m roles do root acessÃ­veis mesmo quando permissoesApp vem vazio', function(done) {
+      localStorage.setItem('usuario', JSON.stringify({
+        id: 'root',
+        login: 'root',
+        email: 'root@example.com',
+        root: true,
+        permissoes: []
+      }));
+
+      $httpBackend.expectGET('/permissoes/roles').respond({
+        permissoes: [],
+        permissoesApp: []
+      });
+
+      PermissionsService.loadPermissions()
+        .then(function() {
+          expect(PermRoleStore.hasRoleDefinition('listarCidades')).toBe(true);
+          return PermRoleStore.getRoleDefinition('listarCidades').validateRole();
+        })
+        .then(function() {
+          done();
+        })
+        .catch(function(err) {
+          fail('fallback de roles do root nÃ£o foi aplicado: ' + err);
+          done();
+        });
+
+      $httpBackend.flush();
+      $rootScope.$digest();
     });
   });
 

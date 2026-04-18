@@ -8,20 +8,62 @@
  * Factory in the influuntApp.
  */
 angular.module('influuntApp')
-  .factory('PermissionsService', ['Restangular', 'PermRoleStore', 'PermPermissionStore', '$q',
-    function (Restangular, PermRoleStore, PermPermissionStore, $q) {
+  .factory('PermissionsService', ['Restangular', 'PermRoleStore', 'PermPermissionStore', 'PermRole', '$q',
+    function (Restangular, PermRoleStore, PermPermissionStore, PermRole, $q) {
 
       var getPermissions, loadPermissions, checkPermission, resetPermissions, getUsuario, podeVisualizarTodasAreas,
-          isUsuarioRoot, setUsuario, refreshUsuario;
+          isUsuarioRoot, setUsuario, refreshUsuario, enableRootRoleFallback, disableRootRoleFallback;
+
+      var originalHasRoleDefinition = PermRoleStore.hasRoleDefinition.bind(PermRoleStore);
+      var originalGetRoleDefinition = PermRoleStore.getRoleDefinition.bind(PermRoleStore);
+      var rootRoleFallbackEnabled = false;
 
       getPermissions = function() {
         return Restangular.all('permissoes').customGET('roles');
+      };
+
+      enableRootRoleFallback = function() {
+        if (rootRoleFallbackEnabled) {
+          return;
+        }
+
+        PermRoleStore.hasRoleDefinition = function(roleName) {
+          return originalHasRoleDefinition(roleName) || _.isString(roleName);
+        };
+
+        PermRoleStore.getRoleDefinition = function(roleName) {
+          if (originalHasRoleDefinition(roleName)) {
+            return originalGetRoleDefinition(roleName);
+          }
+
+          if (_.isString(roleName)) {
+            return new PermRole(roleName, function() {
+              return true;
+            });
+          }
+        };
+
+        rootRoleFallbackEnabled = true;
+      };
+
+      disableRootRoleFallback = function() {
+        if (!rootRoleFallbackEnabled) {
+          return;
+        }
+
+        PermRoleStore.hasRoleDefinition = originalHasRoleDefinition;
+        PermRoleStore.getRoleDefinition = originalGetRoleDefinition;
+        rootRoleFallbackEnabled = false;
       };
 
       loadPermissions = function() {
         return getPermissions()
           .then(function(response) {
             resetPermissions();
+
+            if (isUsuarioRoot()) {
+              enableRootRoleFallback();
+            }
 
             var allPermissions = _.map(response.permissoes, 'chave');
             PermPermissionStore.defineManyPermissions(allPermissions, checkPermission);
@@ -46,6 +88,7 @@ angular.module('influuntApp')
       };
 
       resetPermissions = function() {
+        disableRootRoleFallback();
         PermPermissionStore.clearStore();
         PermRoleStore.clearStore();
         getUsuario(true);
@@ -86,6 +129,14 @@ angular.module('influuntApp')
       };
 
       var checkRole = function(roleName) {
+        if (_.isUndefined(roleName) || _.isNull(roleName) || roleName === '') {
+          return $q.when(true);
+        }
+
+        if (isUsuarioRoot()) {
+          return $q.when(true);
+        }
+
         var role = PermRoleStore.getRoleDefinition(roleName);
         if (role) {
           return role.validateRole();

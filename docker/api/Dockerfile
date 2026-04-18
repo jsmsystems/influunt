@@ -12,4 +12,12 @@ RUN apt-get update && \
       wkhtmltopdf && \
     rm -rf /var/lib/apt/lists/*
 
+COPY influunt-api /workspace/influunt-api
+COPY docker/api/run-api.sh /workspace/docker/api/run-api.sh
+
+RUN sed -i 's/\r$//' /workspace/docker/api/run-api.sh /workspace/influunt-api/bin/activator && \
+    chmod +x /workspace/docker/api/run-api.sh /workspace/influunt-api/bin/activator && \
+    cd /workspace/influunt-api && \
+    ./bin/activator -Dsbt.log.noformat=true compile
+
 WORKDIR /workspace/influunt-api

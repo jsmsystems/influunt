@@ -31,9 +31,8 @@ services:
       - mongo-data:/data/db
 
   mosquitto:
-    image: eclipse-mosquitto:2
-    volumes:
-      - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    build:
+      context: ./docker/mosquitto
     healthcheck:
       test: ["CMD-SHELL", "mosquitto_pub -h 127.0.0.1 -p 1883 -t healthcheck -m ok >/dev/null 2>&1"]
       interval: 10s
@@ -46,7 +45,8 @@ services:
 
   api:
     build:
-      context: ./docker/api
+      context: .
+      dockerfile: docker/api/Dockerfile
     working_dir: /workspace/influunt-api
     stdin_open: true
     tty: true
@@ -67,26 +67,25 @@ services:
     ports:
       - "127.0.0.1:9000:9000"
     volumes:
-      - .:/workspace
       - ivy-cache:/root/.ivy2
       - sbt-cache:/root/.sbt
       - activator-cache:/root/.activator
 
   bootstrap:
-    image: mysql:5.7
+    build:
+      context: .
+      dockerfile: docker/bootstrap/Dockerfile
     working_dir: /workspace
     command: ["/bin/bash", "/workspace/docker/bootstrap/bootstrap.sh"]
     depends_on:
       mysql:
         condition: service_healthy
       api:
-        condition: service_started
-    volumes:
-      - .:/workspace:ro
-
+        condition: service_healthy
   web-setup:
     build:
-      context: ./docker/web-setup
+      context: .
+      dockerfile: docker/web-setup/Dockerfile
     working_dir: /workspace/influunt-app
     command: ["/bin/bash", "/workspace/docker/web-setup/setup-web.sh"]
     environment:
@@ -96,25 +95,20 @@ services:
       LOCAL_MQTT_HOST: localhost
       LOCAL_MQTT_PORT: "1884"
     volumes:
-      - .:/workspace
-      - node-modules:/workspace/influunt-app/node_modules
-      - bower-components:/workspace/influunt-app/bower_components
+      - frontend-workspace:/workspace/influunt-app
 
   web:
-    image: nginx:1.27-alpine
+    build:
+      context: ./docker/nginx
     depends_on:
       api:
-        condition: service_started
-      bootstrap:
-        condition: service_completed_successfully
+        condition: service_healthy
       web-setup:
         condition: service_completed_successfully
     ports:
       - "127.0.0.1:8080:80"
     volumes:
-      - ./docker/nginx/influunt.conf:/etc/nginx/conf.d/default.conf:ro
-      - .:/workspace:ro
-      - bower-components:/workspace/influunt-app/bower_components:ro
+      - frontend-workspace:/workspace/influunt-app:ro
 
   mailhog:
     image: mailhog/mailhog:v1.0.1
@@ -127,5 +121,4 @@ volumes:
   ivy-cache:
   sbt-cache:
   activator-cache:
-  node-modules:
-  bower-components:
+  frontend-workspace:
