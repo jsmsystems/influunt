@@ -1,0 +1,131 @@
+services:
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_DATABASE: influuntdev
+      MYSQL_USER: influunt
+      MYSQL_PASSWORD: influunt
+      MYSQL_ROOT_PASSWORD: root
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -proot --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  mongo:
+    image: mongo:3.4
+    command: ["mongod", "--bind_ip", "0.0.0.0"]
+    healthcheck:
+      test: ["CMD-SHELL", "mongo --quiet --eval 'db.runCommand({ ping: 1 }).ok' | grep 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    volumes:
+      - mongo-data:/data/db
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    volumes:
+      - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_pub -h 127.0.0.1 -p 1883 -t healthcheck -m ok >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    ports:
+      - "127.0.0.1:1883:1883"
+      - "127.0.0.1:1884:1884"
+
+  api:
+    build:
+      context: ./docker/api
+    working_dir: /workspace/influunt-api
+    stdin_open: true
+    tty: true
+    command: ["/workspace/docker/api/run-api.sh"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      mosquitto:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9000/api/api/v1/permissoes/roles >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 40
+      start_period: 15m
+    ports:
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - .:/workspace
+      - ivy-cache:/root/.ivy2
+      - sbt-cache:/root/.sbt
+      - activator-cache:/root/.activator
+
+  bootstrap:
+    image: mysql:5.7
+    working_dir: /workspace
+    command: ["/bin/bash", "/workspace/docker/bootstrap/bootstrap.sh"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+      api:
+        condition: service_started
+    volumes:
+      - .:/workspace:ro
+
+  web-setup:
+    build:
+      context: ./docker/web-setup
+    working_dir: /workspace/influunt-app
+    command: ["/bin/bash", "/workspace/docker/web-setup/setup-web.sh"]
+    environment:
+      LOCAL_APP_ROOT: /api/api/v1
+      LOCAL_ENV_NAME: docker-local
+      LOCAL_INFLUUNT_HOST: localhost
+      LOCAL_MQTT_HOST: localhost
+      LOCAL_MQTT_PORT: "1884"
+    volumes:
+      - .:/workspace
+      - node-modules:/workspace/influunt-app/node_modules
+      - bower-components:/workspace/influunt-app/bower_components
+
+  web:
+    image: nginx:1.27-alpine
+    depends_on:
+      api:
+        condition: service_started
+      bootstrap:
+        condition: service_completed_successfully
+      web-setup:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - ./docker/nginx/influunt.conf:/etc/nginx/conf.d/default.conf:ro
+      - .:/workspace:ro
+      - bower-components:/workspace/influunt-app/bower_components:ro
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    ports:
+      - "127.0.0.1:8025:8025"
+
+volumes:
+  mysql-data:
+  mongo-data:
+  ivy-cache:
+  sbt-cache:
+  activator-cache:
+  node-modules:
+  bower-components:

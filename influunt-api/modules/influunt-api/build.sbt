@@ -4,9 +4,8 @@ scalaVersion := "2.11.7"
 
 resolvers += Resolver.jcenterRepo
 resolvers ++= Seq(Resolver.mavenLocal, "Sonatype snapshots repository" at "https://oss.sonatype.org/content/repositories/snapshots/")
-resolvers ++= Seq("Sonatype snapshots repository 2" at "http://dl.bintray.com/andsel/maven/")
 resolvers ++= Seq("Jasper" at "http://jasperreports.sourceforge.net/maven2/")
-resolvers ++= Seq("Jasper Third Party" at "http://jaspersoft.artifactoryonline.com/jaspersoft/third-party-ce-artifacts/")
+resolvers ++= Seq("Jasper Third Party" at "https://jaspersoft.jfrog.io/jaspersoft/third-party-ce-artifacts/")
 resolvers ++= Seq("Java PDF" at "https://jitpack.io")
 
 javaOptions in Test += "-Dconfig.file=conf/test.conf"
@@ -36,7 +35,6 @@ libraryDependencies ++= Seq(
     "org.hamcrest" % "hamcrest-library" % "1.3",
     "commons-beanutils" % "commons-beanutils" % "1.9.2",
     "net.coobird" % "thumbnailator" % "0.4.8",
-    "io.moquette" % "moquette-broker" % "0.8.1" exclude("org.slf4j", "slf4j-log4j12"),
     "org.mindrot" % "jbcrypt" % "0.3m",
     "org.apache.commons" % "commons-math3" % "3.6.1",
     "com.typesafe.play" %% "play-mailer" % "5.0.0",
