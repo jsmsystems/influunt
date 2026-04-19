@@ -41,12 +41,14 @@ services:
       start_period: 15s
     ports:
       - "127.0.0.1:1883:1883"
-      - "127.0.0.1:1884:1884"
+      - "1884:1884"
 
   api:
     build:
       context: .
       dockerfile: docker/api/Dockerfile
+    environment:
+      INFLUUNT_URL: ${INFLUUNT_URL:-http://localhost:8080}
     working_dir: /workspace/influunt-api
     stdin_open: true
     tty: true
@@ -92,8 +94,8 @@ services:
       LOCAL_APP_ROOT: /api/api/v1
       LOCAL_ENV_NAME: docker-local
       LOCAL_INFLUUNT_HOST: localhost
-      LOCAL_MQTT_HOST: localhost
-      LOCAL_MQTT_PORT: "1884"
+      LOCAL_MQTT_HOST: ${LOCAL_MQTT_HOST:-}
+      LOCAL_MQTT_PORT: "${LOCAL_MQTT_PORT:-1884}"
     volumes:
       - frontend-workspace:/workspace/influunt-app
 
@@ -106,7 +108,7 @@ services:
       web-setup:
         condition: service_completed_successfully
     ports:
-      - "127.0.0.1:8080:80"
+      - "8080:80"
     volumes:
       - frontend-workspace:/workspace/influunt-app:ro
 
