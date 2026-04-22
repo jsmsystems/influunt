@@ -9,7 +9,7 @@ Executar o projeto localmente sem instalar Java, Node, MongoDB ou MySQL no host,
 ## Pré-requisitos
 
 - Docker Desktop em execução
-- Porta `8080` livre no host
+- Porta `8081` livre no host
 - Porta `9000` livre no host
 - Porta `1883` e `1884` livres no host
 - Repositório clonado por completo
@@ -46,7 +46,7 @@ docker compose up -d --build
 Depois abrir:
 
 ```text
-http://localhost:8080
+http://localhost:8081
 ```
 
 Login padrão do ambiente local:
@@ -183,7 +183,7 @@ Na primeira execução em outra máquina, o fluxo recomendado é:
 4. executar `docker compose up -d --build`
 5. aguardar o download das imagens e o build inicial
 6. acompanhar com `docker compose logs -f api web`
-7. abrir `http://localhost:8080`
+7. abrir `http://localhost:8081`
 8. entrar com `root / 1234`
 
 Observação:
@@ -194,7 +194,7 @@ Observação:
 
 1. `docker compose up -d --build`
 2. aguardar `api`, `web`, `mysql`, `mongo` e `mosquitto` ficarem de pé
-3. abrir `http://localhost:8080`
+3. abrir `http://localhost:8081`
 4. entrar com `root / 1234`
 5. a rota deve mudar para `#/app/main`
 6. a dashboard deve carregar com menu superior e blocos de resumo
@@ -230,11 +230,11 @@ E para validar o dashboard com login:
 ```bash
 TOKEN=$(curl -s -D - -o /tmp/influunt-login-body \
   -H 'Content-Type: application/json' \
-  -X POST http://127.0.0.1:8080/api/api/v1/login \
+  -X POST http://127.0.0.1:8081/api/api/v1/login \
   -d '{"login":"root","senha":"1234"}' | tr -d '\r' | awk -F': ' 'tolower($1)=="authtoken"{print $2}')
 
 curl -H "authToken: $TOKEN" \
-  http://127.0.0.1:8080/api/api/v1/monitoramento/status_controladores
+  http://127.0.0.1:8081/api/api/v1/monitoramento/status_controladores
 ```
 
 ## Observação

@@ -24,7 +24,7 @@ Tudo isso sobe em containers pelo Docker Desktop.
 ### Pré-requisitos
 
 - Docker Desktop instalado e iniciado
-- portas `8080`, `9000`, `1883` e `1884` livres
+- portas `8081`, `9000`, `1883` e `1884` livres
 - repositório clonado por completo
 
 ### Passo a passo
@@ -53,7 +53,7 @@ Observações sobre a primeira subida:
 4. Quando terminar, abra no navegador:
 
 ```text
-http://localhost:8080
+http://localhost:8081
 ```
 
 5. Faça login com:

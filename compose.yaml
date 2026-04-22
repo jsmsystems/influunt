@@ -48,7 +48,7 @@ services:
       context: .
       dockerfile: docker/api/Dockerfile
     environment:
-      INFLUUNT_URL: ${INFLUUNT_URL:-http://localhost:8080}
+      INFLUUNT_URL: ${INFLUUNT_URL:-http://localhost:8081}
     working_dir: /workspace/influunt-api
     stdin_open: true
     tty: true
@@ -108,7 +108,7 @@ services:
       web-setup:
         condition: service_completed_successfully
     ports:
-      - "8080:80"
+      - "8081:80"
     volumes:
       - frontend-workspace:/workspace/influunt-app:ro
 
